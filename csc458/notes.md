@@ -2,11 +2,11 @@
 
 ## Table of Contents
 
-- [1.1: Applications](#1.1-applications)
-- [1.2: Requirements](#1.2-requirements)
-- [1.3: Network Architecture](#1.3-network-architecture)
+- [1.1: Applications](#1-1-applications)
+- [1.2: Requirements](#1-2-requirements)
+- [1.3: Network Architecture](#1-3-network-architecture)
 
-## 1.1 Applications
+## 1-1 Applications
 \- Forms of applications:
 * Enable users to view pages full of textual and graphical objects.
 * Delivery of "streaming" audio and video.
@@ -16,7 +16,7 @@
 possible objects that can be viewed.
 
 ---
-## 1.2 Requirements
+## 1-2 Requirements
 - Scalable Connectivity: by introducing nodes, links, networks and routers
 
 - Cost-Effective Resource Sharing: by Statistical Multiplexing
@@ -153,7 +153,7 @@ corrupted, it's called <em>burst error</em>.
 
 
 ---
-## 1.3 Network Architecture
+## 1-3 Network Architecture
 
 ### Layering
 \- Layering provides an **abstraction** for applications that hides the complexity of the 
