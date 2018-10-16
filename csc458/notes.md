@@ -252,3 +252,186 @@ IP there can be arbitrarily many transport protocals, each offering a different 
 abstraction to applications. Thus, the issue of delivering messages from host to host is 
 completely seperated from the issue of providing a useful process-to-process communication
 service.
+
+---
+## Link Layer
+
+---
+### 2.6.1 Physical Properties
+
+- A **transceiver**, a small device directly attached to the tap, detected when the line was **idle**
+and drove the signal when the host was transmitting. It also received incoming signals.
+
+- A **repeater** is a device that forwards digital signals, (much like an amplifier), no more than 4 repeaters
+could be positioned between any pair of hosts.
+
+- A **hub** just repeats whatever it hears on one port out all its other ports.
+
+(Repeaters and hubs forward the signal on **all** outgoing segments. The hosts are in the same *collision domain*
+if they are competing for the same link.)
+
+---
+### 2.6.2 Access Protocal
+The algorithm that controls access to a shared Ethernet link is called *media access control* (**MAC**).
+
+Frame format:
+- The 64-bit **preamble** allows the receiver to synchronize with the signal.
+- Both the **source** and **destination** hosts are identified with a 48-bit address.
+- The packet type field serves as the demultiplexing key.
+- A 32-bit CRC.
+- Each frame contains up to 1500 bytes of data. Minimally, contains at least 46 bytes since the frame needs to be long
+enough to detect a collision.
+- The sending adapter attaches the preamble and CRC before transmitting, and the receiver adapter removes them.
+
+Addresses:</br>
+An Ethernet address consisting of **all 1's** is treated as a **broadcast** address; all adaptors pass frames adressed
+to the broadcast address up to the host. *Multicast address* sets the first bit to 1.
+
+An Ethernet adaptor receives all frames and accepts:
+- Frames addressed to its **own** address.
+- Frames addressed to the **broadcast** address.
+- Frames addressed to a multicast address, if it has been instructed to listen to that address.
+- All frames if it is in promiscuous mode.
+
+Transmitter Algorithm:</br>
+When the adaptor has a frame to send and the line is idle, it transmits the frame immediately; there is no negotiation
+with the other adaptors. The upper bound of 1500 bytes means that the line can only be occupied for a fixed length of
+time.
+
+It takes at most *2d* to detect a collision i.e. two adaptors transmitting at the same time. Once an adaptor has
+detected a collision and stopped its transmission, it doubles then amount of time it waits before trying again 
+(**exponential backoff**).
+
+---
+### 3.1 Switching and Bridging
+A switch is a mechanism that allows us to interconnect links to form a larger network. A switch's primary job is
+to receive incoming packets on one of its links and to transmit them on some other link.
+
+> The only requirement for Ethernet addresses is that no two nodes on a network have the same address.
+
+---
+### 3.1.4 Bridge and LAN switches
+A bridge is a node with a pair of Ethernet adaptors and forwards frames from one Ethernet to another. This node
+will also fully implement the Ethernet's collision detection.
+
+**Learning Bridges**:</br>
+Each packet carries a global address, and the bridge decides which output to send a packet on by looking up that
+address in a table. When a bridge first boots, this table is empty; entries are added and discarded over time.
+
+When a frame is addressed to a host **not** currently in the table, it goes ahead and forwards the frame out on **all** the
+other ports.
+
+**Spanning Tree Algorithm**:</br>
+Problem: loops are built into the network on purpose -- to provide redundancy in case of failure. Since a network with
+no loops needs only **one** link failure to become split into two separate partitions.
+
+Algo:</br>
+- Initially, each bridge thinks it is the root, and so it sends a configuration message out on each of its ports identifying
+it self as the root and gives a distance to root of 0.
+- The bridge checks to see if a new message received is better than the current best config msg recorded for that port.
+- When a bridge receives a configuration message that indicates it is not the designated bridge for that port, it stops 
+sending configuration msg over that port.
+- When the system stabilizes, only the **root** bridge is still generating config msg, and the other bridges are forwarding
+these msg only over ports for which they are the designated bridge.
+
+This algo is not able to forward frames over alternative paths for the sake of routing around a congested bridge.
+
+**Limitations of Bridges**:</br>
+It is not realistic to connect more than a few LANs by means of bridges. One reason for this is that the spanning tree algo
+scales linearly. The other reason is that bridges forward all broadcast frames.
+
+---
+## Network Layer
+---
+### 3.2.1 Basic concepts for IP
+Internet refers to an arbitrary collection of networks interconnected to provide some sort of host-to-host packet delivery
+service. The nodes that interconnect the networks are called **routers**.
+
+**IP** runs on **all** the nodes in a collection of networks and defines the infrastructure that allows these nodes and
+networks to function as a single logical internetwork.
+
+The IP service model has two parts:
+- An addressing scheme, which provides a way to **identify all hosts** in the internetwork.
+- A datagram model of **data delivery**.
+
+*Datagram Delivery*</br>
+A datagram is a type of packet that happens to be sent in a **connectionless** and **unreliable** manner over a network. Every datagram carries
+enough information to let the network forward the packet to its correct destination.
+
+*Packet Format*
+- The Version field specifies the version of IP.
+- HLen specifies the length of the header in 32-bit words.
+- 8-bit TOS: allow packets to be treated differently based on application needs.
+- Length: length of the datagram, including the header. Counts bytes rather than words, unlike HLen.
+- TTL: catch packets that have been going around in routing loops and discard them.
+- Protocal: a demultiplexing key that identifies the higher-level protocol to which this IP packet should be passed.
+- Checksum: calculated by considering the **entire** IP header as a sequence of 16-bit words, adding them up using
+ones complement arithmatic, and taking the ones complement of the result. (Checksum is not as strong as CRC, but much easier
+to calculate in software.)
+- **SourceAddr**: the source address is required to allow recipients to decide if they want to accept the packet and to
+enable them to reply.
+- **DestinationAddr**: every packet contains a full address for its intended destination so that forwarding decisions can
+be made at each router.
+
+*Fragmentation and Reassembly*</br>
+Every network type has a *maximum transmission unit*(MTU), which is the largest IP datagram that it can carry in a frame.
+
+To enable these fragmentations to be reassambled, at the receiving host, they all carry the same identifier in the **Ident** field.
+
+Reassembly is done at the **receiving host** and **not at each router**.
+
+---
+### 3.2.3 Global Addresses (32-bit long)
+Global uniqueness is the first property that should be provided in an addressing scheme.
+
+Ethernet addresses do **not** have a structure, IP addresses are **hierarchical** by contrast. 
+
+IP addresses consist of two parts, usually referred to a *network* part and a *host* part:
+- Network part identifies the network to which the host is attached.
+- Host part identifies each host uniquely on that particular network.
+
+---
+### 3.2.4 Datagram Forwarding in IP
+Forwarding is the process of taking a packet from an input and sending it out on the appropriate output, while
+*routing* is the process of building up the tables that allow the correct output for a packet to be determined.
+
+---
+### 3.2.5 Subnetting and Classless Addressing
+Problem: The amount of state that is stored in a node participating in a routing protocol is **proportional** to the
+number of other nodes. Thus, the more network numbers there are in use, the bigger the forwarding tables get. Big
+forwarding tables add costs to routers, and they are potentially slower to search than smaller tables.
+
+---
+**Subnetting** 
+takes a single IP network number and allocate the IP addresses with that network number to several physical networks,
+which are now referred to as *subnets*. All hosts on the same physical network will have the same subnet number, which
+means that hosts may be on different physical networks but share a single network number.
+
+There is **exactly one** subnet mask per subnet. The bitwise AND of the IP address and subnet mask defines the subnet number of all hosts on the same subnet.
+
+A default route would usually be included in the table and would be used if no explicit matches were found.
+
+---
+**CIDR**</br>
+Subnetting only allows us to split a classful address among multiple subnets, while CIDR allows us to combine
+several classful addresses into a single "supernet". It balances the desire to **minimize** the number of routes
+that a router needs to know against the need to hand out addresses efficiently.
+
+It uses a single entry in a forwarding table to tell us how to reach of lot of different networks.
+
+---
+### 3.2.6 ARP
+Problem: IP datagrams contain IP addresses, but the physical interface hardware on the host or router to which you want to send the datagram only understands
+the addressing scheme of that particular network. Thus, we need to translate the IP address to a link-level address that makes sense on this network (e.g. 48-bit Ethernet address).
+
+A host wishing to obtain a physical address broadcasrs an ARP request, and the host on the network that has the IP
+address in the request then replies with its physical hardware address.
+
+---
+### 3.2.8 ICMP
+*Internet Control Message Protocol* (ICMP) defines a collection of error messages that are sent back to the source
+host whenever a router or host is unable to process an IP datagram successfully.
+
+*ICMP-Redirect* tells the source host that there is a better route to the destination.
+
+ICMP also provides the basis for two widely used debugging tools, `ping` and `traceroute`.
