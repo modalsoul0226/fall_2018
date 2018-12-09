@@ -189,7 +189,8 @@ Stop-and-wait is inefficient especially when delay-bandwidth product is high. Ho
 <img src="images/reader_writer.png">
 
 TCP adds flow control to the sliding window, `ACK + WIN` is the sender's limit:
-<img src="images/WIN.png" width=300px>
+
+<img src="images/WIN.png" width=400px>
 
 ---
 #### Receiver buffering
