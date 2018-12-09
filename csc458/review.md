@@ -232,3 +232,59 @@ Receiving a FIN `EOF`:
 - Eventually, the attempt to read returns an `EOF`.
 
 <img src="images/FIN.png">
+
+
+---
+# Lecture 7: Congestion Control
+
+#### Flow control vs. Congestion control
+- Flow control: keep one fast sender from overwhelming a slow receiver.
+- Congestion control: keep a set of senders from overloading the network.
+- A fast network feeding a low-capacity receiver -> flow control
+- A slow network feeding a high-capacity receiver -> congestion control
+  
+Similar mechanisms:
+- TCP flow control: receiver window
+- TCP congestion control: congestion window
+- TCP window: min{congestion window, receiver window}
+
+---
+#### Congestion is unavoidable
+- Two packets arrive at the same time. The node can only transmit one, and either buffer or drop the other.
+- If many packets arrive in a short period of time. The node cannot keep up with the arriving traffic, and the buffer may eventually overflow.
+  
+---
+#### Advantages of having congestion:
+- It makes efficient use of the link, and buffers in the routers are frequently occupied.
+- If buffers are always empty, delay is low, but our usage of the network is low. If buffers are always occupied, delay is high, but we are using the network more efficiently.
+
+### Congestion Collapse
+Increase in network load results in a decrease of useful work done.
+- Spurious retransmission of packets still in flight. Solution: better timers and TCP congestion control.
+- Undelivered packets. Packets consume resources and are dropped elsewhere in network. Solution: congestion control for *all* traffic.
+
+---
+### Simple congestion detection
+- Packet loss: timeout or triple-duplicate ACK
+- Packet delay: RTT estimate
+
+---
+### TCP Congestion Control
+- TCP implements **host-based**, **feedback-based**, **window-based** congestion control.
+- TCP sources attempts to determine how much capacity is available.
+- TCP sends packets, then reacts to observable events like packet loss.
+
+#### Idea of TCP Congestion Control
+- Each source determines the available capacity so it knows how many packets to have in transit.
+- Congestion window: maximum number of unacknowledged bytes to have in transit. Send at the rate of the slowest component: receiver or network.
+- Adapting the congestion window: decrease upon losing a packet, increase upon success.
+- `LastByteSent - LastByteAcked <= cwnd`
+- `rate ~= cwnd/RTT` bytes/s
+
+---
+#### Additive Increase, Multiplicative Decrease
+- Increase linearly, decrease multiplicatively.
+- A necessary condition for stability of TCP.
+- Consequence of over-sized window are much worse than having an under-sized window.
+- Increase: `cwnd += MSS * (MSS / cwnd)`
+- Decrease: `cwnd \= 2` (never dropped below 1 MSS)
