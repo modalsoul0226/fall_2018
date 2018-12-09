@@ -288,3 +288,56 @@ Increase in network load results in a decrease of useful work done.
 - Consequence of over-sized window are much worse than having an under-sized window.
 - Increase: `cwnd += MSS * (MSS / cwnd)`
 - Decrease: `cwnd \= 2` (never dropped below 1 MSS)
+
+---
+### Slow start phase
+- Start with a small congestion window. Initially, cwnd is 1 MSS. So, the initial sending rate is MSS/RTT.
+- Could be wasteful because this might be much less than the actual bandwidth and linear increase takes a long time to accelerate.
+- Slow-start phase: Sender starts at a slow state,
+- ... but increases the rate exponentially
+- ... until the first loss event.   
+
+<img src="images/slow_start.png" width=400px>
+
+### Two kinds of LOSS in TCP
+
+**Triple duplicate ACK**
+- Packet `n` is lost, but packets `n + 1`, `n + 2`, etc. arrive.
+- Receiver sends duplicate ACKs.
+- ... and the sender retransmits packet `n` quickly.
+- Do a **mulplicative decrease** and keep going.
+
+**Timeout**
+- Packet `n` is lost and detected via a timeout,
+- e.g. because all packets in flight were lost.
+- After the timeout, blasting away for the entire cwnd
+- ... would trigger a very large burst in traffic.
+- So, better to start over with a low cwnd.
+
+---
+#### Repeating slow start after timeout
+<img src="images/slow_start1.png" width=400px>
+
+#### Repeating slow start after idle period
+- Suppose a TCP connection goes idle for a while.
+- Eventually, the network conditions change. (Maybe many more flows are traversing the link)
+- Dangerous to start transmitting at the old rate. Previously-idle TCP sender might blast the network and cause excessive congestion and packet loss.
+- So, some TCP implementations repeat slow start.
+
+---
+### Nagle's Algorithm
+> Some interactive applications like Telnet or ssh generate only small packets, and Since small packets are wastefull. It's appealing to reduce the number of packets by forcing every packet to have some minimum size. Therefore, we need to balance the competing trade-offs by sending larger packets without introducing much delay by waiting.
+
+- Wait if the amount of data is small (smaller than MSS).
+- Wait if some other packet is already in flight i.e. still awaiting the ACKs for previous packets.
+- That is, send at most one small packet per RTT, by waiting until all outstanding ACKs have arrived.
+
+---
+### Delayed ACK
+- TCP traffic is often bidirectional, both data and ACKs are traveling in both directions.
+- However, ACK packets have high overhead (40B for headers and 0B for data),
+- Therefore, piggybacking is appealing.
+
+- Upon receiving a packet, the host B sets a timer. Typically 200 msec or 500 msec.
+- If B's application generates data, send and piggyback the ACK bit.
+- If the timer expires, send a (non-piggybacked) ACK.
