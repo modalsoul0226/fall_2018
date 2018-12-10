@@ -342,3 +342,209 @@ Increase in network load results in a decrease of useful work done.
 - Upon receiving a packet, the host B sets a timer. Typically 200 msec or 500 msec.
 - If B's application generates data, send and piggyback the ACK bit.
 - If the timer expires, send a (non-piggybacked) ACK.
+
+
+---
+# Lecture 8: Queueing Mechanisms, Middleboxes
+
+## Random Early Detection (RED)
+- Router notices that the queue is getting backlogged,
+- ... and randomly drops packets to signal congestion.
+- Drop probability increases as queue length increases.
+- If buffer is below some level, don't drop anything,
+- ... otherwise, set drop probability as function of queue.
+
+<img src="images/RED.png" width=300px>
+
+### Properties of RED
+- Drops packets before queue is full. In the hope of reducing the rates of some flows.
+- Drops packet in proportion to each flow's rate. High-rate flows have more packets and hence, a higher chance of being selected.
+- Drops are spaced out in time, which should help desynchronize the TCP senders.
+- Tolerant of burstiness in the traffic, by basing the decisions on average queue length.
+
+---
+#### More about Fairness
+Fairness and UDP
+- Multimedia apps often do not use tcp, do not want rate throttled by congestion control.
+- Instead, use udp to send audio/video at constant rate, tolerate packet loss.
+
+#### Fairness, parallel TCP connections
+- App can open multiple parallel connections between two hosts.
+- Web browsers do this.
+
+---
+## Explicit Congestion Notification (ECN)
+- Two bits in IP header (ToS) marked **by network router** to indicate congestion.
+- Congestion indication carried to receiving host.
+- Receiver (after seeing congestion indication in IP datagram) sets ECE bit on receiver-to-sender ACK to notify sender of congestion.
+
+<img src="images/ECN.png" width=450px>
+
+
+---
+## Middleboxes
+- Interposed in-between the communicating hosts.
+- Often without knowledge of one or both parties.
+- e.g. Network address translator, firewalls and web proxies.
+
+Middleboxes address important problems:
+- Using fewer IP addresses.
+- Blocking unwanted traffic.
+- Making fair use of network resources.
+- Improving web performance.
+
+Problems:
+- No longer globally unique IP addresses.
+- No longer can assume network simply delivers packets.
+
+---
+## Network Address Translation (NAT)
+Share addresses among numerous devices without requiring changes to existing hosts.
+
+#### IP header translator
+- Local network addresses not globally unique.
+- NAT box rewrites the IP addresses. (Make the "inside" look like a single IP address, and change header checksums accordingly.)
+- Outbound traffic: rewrite the source IP address.
+- Inbound traffic: rewrite the destination IP address.
+
+---
+#### Port-Translating NAT
+Map outgoing packets:
+- Replace source address with NAT address. 
+- Replace source port number with a new port number. 
+- Remote hosts repond using `(NAT addr, new port #)`.
+
+Maintain a translation table, store map of `(source addr, port #)` to `(NAT addr, new port #)`.
+
+Map incoming packets:
+- Consult the translation table.
+- Map the destination address and port number.
+- Local host receives the incoming packet.
+
+<img src="images/NAT.png">
+
+---
+#### Maintaining the mapping table
+- Create an entry upon seeing a packet, packet with new `(src addr, src port)` pair.
+- If no packets arrive within a time window, then delete the mapping to free up the port numbers.
+
+---
+#### Objections against NAT
+- Difficult to support peer-to-peer applications. P2P needs a host to act as a server, difficult if both hosts are behind NAT.
+- Routers are not supposed to look at port numbers. Network layer should only care about IP header, and not be looking at the port numbers at all.
+- NAT violates the end-to-end argument. Network nodes should not modify the packets.
+- IPv6 is a cleaner solution (better to migrate than to limp along with a hack).
+
+---
+## Firewalls
+Isolates organization's internal net from larger Internet, allowing some packets to pass, blocking others.
+
+---
+#### Denial of Service
+- Outsider overwhelms the host with unsolicited traffic with the goal of preventing any useful work. 
+- By taking over a large collection of hosts 
+- ... and program these hosts to send traffic to your host 
+- ... lead to excessive traffic.
+
+#### Break-Ins
+- Outsider exploits a vulnerability in the end host
+- ... with the goal of changing the behavior of the host.
+
+---
+### Packet Filtering
+Internal network connected to Internet via firewall.</br>
+Firewall filters packet-by-packet, based on:
+- src IP addr, dest IP addr
+- TCP/UDP src and dest port numbers
+- ICMP message type
+- TCP SYN and ACK bits
+
+### Traffic Management
+- Classify the traffic based on rules, and then handle the classes of traffic differently.
+- Limit the amount of bandwidth for certain traffic.
+- Seperate queues. Use rules to group related packets, and then do round-robin scheduling across the groups.
+
+
+#### Firewall Implementation Challenges
+- Per-packet handling: must inspect every packet, challenging on very high-speed links.
+- Complex filtering rules: may have large number of complicated rules.
+
+---
+### Application Gateways
+- Filter packets on application data. Not just on IP and TCP/UDP headers.
+- Example: in order to restrict Telnet usage, force all Telnet traffic to go through a gateway i.e. filter Telnet traffic that doesn't originate from the IP address of the gateway.
+- At the gateway, require user to login and provide password, apply policy to decide whether they can proceed.
+
+<img src="images/gateway.png" width=450px>
+
+#### Motivation for Gateways
+- Enable more detailed policies, e.g. login id and password at Telnet gateway.
+- Avoid rogue machines sending traffic, e.g. e-mail "server" running on user machine, probably a sign of a spammer.
+- Enable a central place to perform logging, e.g. forcing all web accesses through a gateway to log the IP addresses and URLs.
+- Improve performance through caching, e.g. forcing all web accesses through a gateway to enable caching of the popular content.
+
+
+---
+## Web Proxies
+Proxy is a server to the client and a client to the server.
+
+---
+### Proxy Caching
+- Faster reponse time to the clients.
+- Lower load on the web server.
+- Reduced bandwidth consumption inside the network.
+
+---
+#### Getting request to the proxy
+Explicit configuration:
+- Browser configured to use a proxy.
+- Directs all requests through the proxy.
+- Problem: requires user action
+
+Transparent proxy (interception proxy)
+- Proxy lies in path from the client to the servers.
+- Proxy intercepts packets during route to the server
+- ... and interposes itself in the data transfer.
+- Benefit: does not require user action.
+
+---
+#### Challenges of Transparent Proxies
+- Must ensure all packets pass by the proxy, by placing it at the only access point to the Internet e.g. at the border router of a campus or company.
+- Overhead of reconstructing the requests. Must intercept the packets as they fly by, and reconstruct into the ordered by stream.
+- May be viewed as a violation of user privacy as it may be keeping logs of the user's requests.
+
+---
+### Other functions of Web Proxies
+- Anonymization: server sees requests coming from the proxy address, rather than the individual user IP addresses.
+- Transcoding: converting data from one form to another, e.g. reducing the size of images for cell phone browsers.
+- Prefetching: requesting content before the user asks for it.
+- Filtering: blocking access to sites, based on URL or content.
+
+---
+# Lecture 9: Software Defined Networking (SDN)
+
+---
+# Lecture 10: Network security
+- **Confidentiality**: only sender and intended receiver should understand message contents.
+- **Authentication**: sender, receiver want to confirm identity of each other.
+- **Message integrity**: sender, receiver want to ensure message not altered without detection.
+- **Access and availability**: services must be accessible and available to users.
+
+---
+Malicious operations:
+- **Eavesdrop**: intercept messages, and actively insert messages into connection.
+- **Impersonation**: can fake source address in packet.
+- **Hijacking**: take over ongoing connection by removing sender or receiver, inserting himself in place.
+- **Denial of service**: prevent service from being used by others e.g. by overloading resources.
+
+---
+### Symmetric key crypto
+- Requires sender, receiver know shared secret key.
+
+### Public key crypto
+- Sender, receiver do not share secret key.
+- Public encryption key known to all.
+- Private decryption key known only to receiver.
+
+### RSA in practice: Session key
+Use public key crypto to establish secure connection, then establish second key -- symmetric session key -- for encrypting data.
