@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+            <title>CSC309: Lab 6</title>
+            <script>
+            // 'use strict';
+            // On anonymous function
+            console.log("--------Part 1---------");
+            function evaluate(x) {
+                return (y) => {
+                    return (z) => {
+                        return x + y * z;
+                    }
+                }
+            }
+            
+            // log 53
+            console.log(evaluate(3)(5)(10));
+            console.log("-----------------------");
+
+
+            // _________________________________________________________
+            // On `var` and `let`.
+            // log four 4's, since `var i` is 4 at the end
+            for (var i = 0; i <= 3; i++) {
+                setTimeout(() => {
+                    console.log(i);
+                }, 1000);
+            }
+            
+            // log 0 1 2 3
+            for (let i = 0; i <= 3; i++) {
+                setTimeout(() => {
+                    console.log(i);
+                }, 1000);
+            }
+
+
+            // _________________________________________________________
+            // log "no me" first, then log "print me first"
+            setTimeout(() => {
+                console.log("print me first")}, 0); 
+            // "print me first" is delayed because `setTimeout()` re-queues the
+            // process at the end of the execution queue.
+            console.log("no me!");
+
+
+            // _________________________________________________________
+            function zero(callback) {
+                return setTimeout(callback, 0);
+            }
+            
+            function test1() {
+                function log() {
+                    console.log(txt);
+                }
+
+                zero(log);
+                let txt = "text message";
+            }
+            test1();
+            
+            // _________________________________________________________
+            console.log("--------Part 5---------");
+            // In JS, function will be hoisted to the top of the current
+            // scope. But function defined using an expression are not hoisted.
+
+            console.log(typeof foo); // log 'function'
+            foo();
+            function foo() {
+                console.log(1);
+            }
+            function foo() {    // This `foo` will shadow the previous one.
+                console.log(2); // 2 will be printed
+            }
+            var foo = 3;
+            // foo(); // This will raise an error because `foo` is no longer a function. 
+            console.log("-----------------------");
+            
+
+            // _________________________________________________________
+            var myObject = {
+                boo: 'bar',
+                func: function () {
+                    // Here, both `self` and `this` refer to the
+                    // owner object of `func` i.e. myObject
+                    var self = this;
+                    console.log(this.boo);
+                    console.log(self.boo);
+                    
+                    // Here, `self` is unchanged i.e. still refer to myObject,
+                    // but `this` is unbounded. 
+                    // Also, `this` is undefined if we 'use strict'.
+                    (function () {
+                        console.log(this.boo);
+                        console.log(self.boo);
+                    })();
+                    
+                    // In an arrow function, `this` value of the enclosing
+                    // lexical context is used, in this case, myObject is used.
+                    // (() => {
+                    //     console.log(this.boo);
+                    //     console.log(self.boo);
+                    // })();
+                }
+            }
+            // This bounds the owner object of func() to myObject.
+            myObject.func(); 
+
+            // var owen = {status:"homeless", powerlevel: 100, cool: true};
+            // var status, powerlevel, cool;
+            // ({status, powerlevel, cool} = owen);
+
+            // const list = [1,2,3];
+            // const [a=9,b=0,c=9,d=9,e] = list;
+            // console.log(a,b,c,d,e);
+
+            // console.log("abc" == new String("abc"));
+            // console.log("abc" === new String("abc"));
+
+            // const point = {
+            //     toString() {
+            //         return "this is a point";
+            //     }
+            // }
+            // console.log(`${point}`);
+
+            // function sort(arr = [], direction="ascending") {
+            //     console.log(arr);
+            //     console.log(direction);
+            // }
+
+            // function printColors(first,second,...rest) {
+            //     console.log(`Top colors are ${first}, ${second}, others are ${rest}`);
+            // }
+
+            // const array = [1,2,3,4];
+            // console.log(Math.max(...array));
+
+            </script>
+            <style>
+                div {
+                    width: 200px;
+                    height: 200px;
+                }
+
+                .blue {
+                    background: blue;
+                }
+
+                .red {
+                    background: red;
+                }
+            </style>
+    </head>
+    <body>
+        <h1>Lab 6: Midterm Review</h1>
+        <!-- CSS rules precedence:
+        When the precedence is the same, rule further down the
+        style sheet wins. -->
+        <div class="blue red"></div>
+    </body>
+</html>
